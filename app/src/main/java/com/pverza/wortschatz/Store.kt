@@ -41,6 +41,25 @@ class Store(context: Context) {
         get() = prefs.getInt("newPerDay", 10)
         set(value) = prefs.edit().putInt("newPerDay", value).apply()
 
+    /** False until the user has picked their levels on first launch. */
+    var onboarded: Boolean
+        get() = prefs.getBoolean("onboarded", false)
+        set(value) = prefs.edit().putBoolean("onboarded", value).apply()
+
+    /** Show a quick word card right after the phone is unlocked. */
+    var unlockCards: Boolean
+        get() = prefs.getBoolean("unlockCards", false)
+        set(value) = prefs.edit().putBoolean("unlockCards", value).apply()
+
+    /** At most one unlock card per this many minutes. */
+    var unlockGapMinutes: Int
+        get() = prefs.getInt("unlockGap", 15)
+        set(value) = prefs.edit().putInt("unlockGap", value).apply()
+
+    var lastUnlockCardAt: Long
+        get() = prefs.getLong("lastUnlock", 0L)
+        set(value) = prefs.edit().putLong("lastUnlock", value).apply()
+
     var levels: Set<String>
         get() = (prefs.getStringSet("levels", null) ?: setOf("A1", "A2")).toSet()
         set(value) = prefs.edit().putStringSet("levels", HashSet(value)).apply()

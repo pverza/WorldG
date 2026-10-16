@@ -12,17 +12,28 @@ android {
         applicationId = "com.pverza.wortschatz"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    signingConfigs {
+        // A fixed key checked into the repo, so every build is signed the same way and a new
+        // APK installs over the previous one. Fine for a personal sideloaded app.
+        create("release") {
+            storeFile = file("wortschatz.keystore")
+            storePassword = "wortschatz"
+            keyAlias = "wortschatz"
+            keyPassword = "wortschatz"
+        }
     }
 
     buildTypes {
         release {
-            // Small, fast APK. Signed with the debug key so it can be sideloaded directly.
+            // Small, fast APK that can be sideloaded directly.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

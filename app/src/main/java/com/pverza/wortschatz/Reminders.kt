@@ -73,6 +73,24 @@ object Notifier {
         manager.createNotificationChannel(channel)
     }
 
+    const val SERVICE_NOTIFICATION_ID = 2
+    const val SERVICE_CHANNEL_ID = "service"
+
+    /** Channel for the tiny ongoing notification of the unlock-card service (minimum importance). */
+    fun ensureServiceChannel(context: Context) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        if (manager.getNotificationChannel(SERVICE_CHANNEL_ID) != null) return
+        val channel = NotificationChannel(
+            SERVICE_CHANNEL_ID,
+            "Unlock cards",
+            NotificationManager.IMPORTANCE_MIN,
+        ).apply {
+            description = "Keeps the unlock word card ready. Silent and collapsed."
+            setShowBadge(false)
+        }
+        manager.createNotificationChannel(channel)
+    }
+
     fun show(context: Context, word: Word) {
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
@@ -150,6 +168,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             Reminders.reschedule(context)
+            UnlockCards.sync(context)
         }
     }
 }

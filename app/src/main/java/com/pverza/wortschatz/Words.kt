@@ -12,6 +12,17 @@ data class Word(
     val level: String,
 )
 
+/** CEFR levels in learning order. */
+val LEVELS = listOf("A1", "A2", "B1", "B2", "C1")
+
+val LEVEL_NAMES = mapOf(
+    "A1" to "Beginner",
+    "A2" to "Elementary",
+    "B1" to "Intermediate",
+    "B2" to "Upper intermediate",
+    "C1" to "Advanced",
+)
+
 /** Loads the bundled vocabulary once and keeps it in memory (a few KB). */
 object WordRepository {
     @Volatile
@@ -43,7 +54,8 @@ object WordRepository {
                 )
             )
         }
-        return list
+        // Easier levels first; within a level keep the file order (ids never change).
+        return list.sortedWith(compareBy({ LEVELS.indexOf(it.level) }, { it.id }))
     }
 
     fun byId(context: Context, id: Int): Word? = all(context).firstOrNull { it.id == id }
