@@ -1,5 +1,6 @@
 package com.pverza.wortschatz
 
+import android.app.ActivityManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -48,6 +49,14 @@ object UnlockCards {
     }
 
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    /** Whether Android is currently running our service (only our own services are visible). */
+    @Suppress("DEPRECATION")
+    fun isRunning(context: Context): Boolean {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return manager.getRunningServices(Int.MAX_VALUE)
+            .any { it.service.className == UnlockService::class.java.name }
+    }
 }
 
 /**
@@ -134,18 +143,48 @@ object UnlockCard {
     fun maybeShow(context: Context) {
         val app = context.applicationContext
         val store = Store(app)
-        if (!store.unlockCards) return
-        if (!Settings.canDrawOverlays(app)) return
-
         val now = System.currentTimeMillis()
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        if (hour < store.startHour || hour >= store.endHour) return
-        if (now - store.lastUnlockCardAt < store.unlockGapMinutes * 60_000L) return
+        store.lastUnlockEventAt = now
 
-        val word = Picker.next(app, store, now, allowAhead = false) ?: return
+        if (!store.unlockCards) {
+            store.lastUnlockResult = "no card: the setting is off"
+            return
+        }
+        if (!Settings.canDrawOverlays(app)) {
+            store.lastUnlockResult = "no card: permission \"Display over other apps\" is missing"
+            return
+        }
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        if (hour < store.startHour || hour >= store.endHour) {
+            store.lastUnlockResult = "no card: outside the active hours"
+            return
+        }
+        if (now - store.lastUnlockCardAt < store.unlockGapMinutes * 60_000L) {
+            store.lastUnlockResult = "no card: waiting, at most one every ${store.unlockGapMinutes} min"
+            return
+        }
+
+        // allowAhead: even when nothing is due, show the word that is due soonest, so there is
+        // always something to see. The gap above keeps this from becoming annoying.
+        val word = Picker.next(app, store, now, allowAhead = true)
+        if (word == null) {
+            store.lastUnlockResult = "no card: no word available, check your levels"
+            return
+        }
         store.lastUnlockCardAt = now
+        store.lastUnlockResult = "card shown"
         store.markShown(word.id, now)
         show(app, store, word)
+    }
+
+    /** For the "test" button: shows a card right now, ignoring the gap and the active hours. */
+    fun showTest(context: Context): Boolean {
+        val app = context.applicationContext
+        if (!Settings.canDrawOverlays(app)) return false
+        val store = Store(app)
+        val word = Picker.next(app, store, System.currentTimeMillis(), allowAhead = true) ?: return false
+        show(app, store, word)
+        return true
     }
 
     fun dismiss() {

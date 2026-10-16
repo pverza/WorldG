@@ -111,6 +111,25 @@ private fun openOverlaySettings(context: Context) {
     }
 }
 
+private fun openBatterySettings(context: Context) {
+    try {
+        context.startActivity(Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+    } catch (e: Exception) {
+        // Not available on this device.
+    }
+}
+
+private fun ago(time: Long): String {
+    if (time <= 0L) return "never"
+    val minutes = (System.currentTimeMillis() - time) / 60_000
+    return when {
+        minutes < 1 -> "just now"
+        minutes < 60 -> "$minutes min ago"
+        minutes < 24 * 60 -> "${minutes / 60} h ago"
+        else -> "${minutes / (24 * 60)} d ago"
+    }
+}
+
 @Composable
 fun App(store: Store, resumeTick: Int) {
     val context = LocalContext.current
@@ -496,6 +515,39 @@ fun SettingsScreen(store: Store, resumeTick: Int) {
                     )
                 }
             }
+
+            val status = remember(resumeTick) {
+                listOf(
+                    "Permission: " + if (canOverlay) "OK" else "missing",
+                    "Service: " + if (UnlockCards.isRunning(context)) "running" else "NOT running",
+                    "Last unlock detected: " + ago(store.lastUnlockEventAt),
+                    "Last result: " + store.lastUnlockResult.ifEmpty { "-" },
+                )
+            }
+            for (line in status) {
+                Text(
+                    line,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedButton(
+                onClick = {
+                    if (canOverlay) UnlockCard.showTest(context) else openOverlaySettings(context)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Show an unlock card now (test)") }
+            OutlinedButton(
+                onClick = { openBatterySettings(context) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Battery settings") }
+            Text(
+                "If no card appears after unlocking: on Xiaomi, Samsung, OnePlus or Huawei phones, " +
+                    "set Wortschatz to \"Unrestricted\" battery usage and allow autostart and " +
+                    "background activity.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Text(
             "The card slides in on top of your screen right after you unlock. It uses no battery " +

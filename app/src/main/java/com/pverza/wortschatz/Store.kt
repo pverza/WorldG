@@ -60,6 +60,16 @@ class Store(context: Context) {
         get() = prefs.getLong("lastUnlock", 0L)
         set(value) = prefs.edit().putLong("lastUnlock", value).apply()
 
+    /** When the service last noticed an unlock (shown in Settings to help find problems). */
+    var lastUnlockEventAt: Long
+        get() = prefs.getLong("lastUnlockEvent", 0L)
+        set(value) = prefs.edit().putLong("lastUnlockEvent", value).apply()
+
+    /** What happened on the last unlock: card shown, or why not. */
+    var lastUnlockResult: String
+        get() = prefs.getString("lastUnlockResult", "") ?: ""
+        set(value) = prefs.edit().putString("lastUnlockResult", value).apply()
+
     var levels: Set<String>
         get() = (prefs.getStringSet("levels", null) ?: setOf("A1", "A2")).toSet()
         set(value) = prefs.edit().putStringSet("levels", HashSet(value)).apply()
