@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wortschatz</string>
+    <string name="channel_name">Word of the moment</string>
+    <string name="channel_description">Quiet German word cards. No sound, no vibration.</string>
+</resources>
